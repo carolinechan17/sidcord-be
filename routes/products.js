@@ -1,12 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const model = require('../models/index');
-
+const { Op } = require("sequelize");
 //create new product
 router.post('/', async function (req, res, next) {
   try {
-    const { name, price, stock, sellerId } = req.body;
-    const product = await model.products.create({ name, price, stock, sellerId });
+    const { name, slug, price, stock, sellerId } = req.body;
+    const product = await model.products.create({ name, slug, price, stock, sellerId });
     return res.send({
       code: 200,
       status: 'SUCCESS',
@@ -24,10 +24,13 @@ router.post('/', async function (req, res, next) {
 });
 
 //return products that belongs to seller with id
-router.get('/:id', async function (req, res, next) {
+router.get('/:query', async function (req, res, next) {
   try {
-    const id = req.params.id;
-    const product = await model.products.findAll({ where: { sellerId: id } });
+    const query = req.params.query;
+    const product = await model.products.findAll({ where: { [Op.or]: [
+      { sellerId: query },
+      { slug: query }
+    ] } });
     return res.send({
       code: 200,
       status: 'SUCCESS',
@@ -48,8 +51,8 @@ router.get('/:id', async function (req, res, next) {
 router.put('/:id', async function (req, res, next) {
   try {
     const id = req.params.id;
-    const { name, price, stock, sellerId } = req.body;
-    const product = await model.products.update({ name, price, stock, sellerId }, { where: { id: id } });
+    const { name, slug, price, stock, sellerId } = req.body;
+    const product = await model.products.update({ name, slug, price, stock, sellerId }, { where: { id: id } });
     return res.send({
       code: 200,
       status: 'SUCCESS',
