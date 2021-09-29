@@ -1,15 +1,22 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const model = require('../models/index');
+const model = require("../models/index");
+const IsAuth = require("../middleware/IsAuth");
 
 //create new customer
-router.post('/', async function (req, res, next) {
+router.post("/", IsAuth, async function (req, res, next) {
   try {
-    const { name, email, password, phone } = req.body;
-    const customer = await model.customers.create({ name, email, password, phone });
+    const { name, email, phone, uid, photoURL } = req.body;
+    const customer = await model.customers.create({
+      name,
+      email,
+      phone,
+      photoURL,
+      uid,
+    });
     return res.send({
       code: 200,
-      status: 'STATUS',
+      status: "STATUS",
       data: {
         customer,
       },
@@ -17,20 +24,20 @@ router.post('/', async function (req, res, next) {
   } catch (err) {
     return res.send({
       code: 400,
-      status: 'BAD_REQUEST',
+      status: "BAD_REQUEST",
       message: err.message,
     });
   }
 });
 
 //return customer data with id
-router.get('/:id', async function (req, res, next) {
+router.get("/:uid", IsAuth, async function (req, res, next) {
   try {
-    const id = req.params.id;
-    const customer = await model.customers.findOne({ where: { id: id } });
+    const uid = req.params.uid;
+    const customer = await model.customers.findOne({ where: { uid: uid } });
     return res.send({
       code: 200,
-      status: 'SUCCESS',
+      status: "SUCCESS",
       data: {
         customer,
       },
@@ -38,21 +45,24 @@ router.get('/:id', async function (req, res, next) {
   } catch (err) {
     return res.send({
       code: 400,
-      status: 'BAD_REQUEST',
+      status: "BAD_REQUEST",
       message: err.message,
     });
   }
 });
 
 //update profile customer
-router.put('/:id', async function (req, res, next) {
+router.put("/:uid", IsAuth, async function (req, res, next) {
   try {
-    const id = req.params.id;
-    const { name, email, password, phone } = req.body;
-    const customer = await model.customers.update({ name, email, password, phone }, { where: { id: id } });
+    const uid = req.params.uid;
+    const { name, email, phone, bio } = req.body;
+    const customer = await model.customers.update(
+      { name, phone, bio },
+      { where: { uid: uid } }
+    );
     return res.send({
       code: 200,
-      status: 'SUCCESS',
+      status: "SUCCESS",
       data: {
         customer,
       },
@@ -60,20 +70,20 @@ router.put('/:id', async function (req, res, next) {
   } catch (err) {
     return res.send({
       code: 400,
-      status: 'BAD_REQUEST',
+      status: "BAD_REQUEST",
       message: err.message,
     });
   }
 });
 
 //delete account customer
-router.delete('/:id', async function (req, res, next) {
+router.delete("/:id", IsAuth, async function (req, res, next) {
   try {
     const id = req.params.id;
     const customer = await model.customers.destroy({ where: { id: id } });
     return res.send({
       code: 200,
-      status: 'SUCCESS',
+      status: "SUCCESS",
       data: {
         customer,
       },
@@ -81,7 +91,7 @@ router.delete('/:id', async function (req, res, next) {
   } catch (err) {
     return res.send({
       code: 400,
-      status: 'BAD_REQUEST',
+      status: "BAD_REQUEST",
       message: err.message,
     });
   }
