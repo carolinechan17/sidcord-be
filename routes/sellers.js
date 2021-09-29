@@ -61,10 +61,10 @@ router.get("/get/products", IsSeller, async function (req, res, next) {
 });
 
 //return seller data with id
-router.get("/:id", async function (req, res, next) {
+router.get("/:uid", async function (req, res, next) {
   try {
-    const id = req.params.id;
-    const seller = await model.sellers.findOne({ where: { id: id } });
+    const uid = req.params.uid;
+    const seller = await model.sellers.findOne({ where: { uid: uid } });
     return res.send({
       code: 200,
       status: "SUCCESS",
