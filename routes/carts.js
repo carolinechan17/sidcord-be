@@ -3,17 +3,13 @@ const router = express.Router();
 const model = require('../models/index');
 const IsAuth = require('../middleware/IsAuth');
 
-//add to cart with customer id
-router.post('/:id', IsAuth, async function (req, res, next) {
+//add to cart
+router.post('/', IsAuth, async function (req, res, next) {
   try {
-    const id = req.params.id;
-    const { productId, customerId, quantity, totalPrice } = req.body;
-    const cart = await model.carts.create({
-      productId,
-      customerId,
-      quantity,
-      totalPrice,
-    });
+    const { productId, customerId, quantity } = req.body;
+    const price = await model.products.findOne({ where: { id: productId } });
+    const totalPrice = price * quantity;
+    const cart = await model.carts.create({ productId, customerId, quantity, totalPrice });
     return res.send({
       code: '200',
       status: 'SUCCESS',
@@ -30,7 +26,28 @@ router.post('/:id', IsAuth, async function (req, res, next) {
   }
 });
 
-//increment one specific item with id
+//return all item in cart with customer id
+router.get('/:id', IsAuth, async function (req, res, next) {
+  try {
+    const customerId = req.params.id;
+    const cart = await model.carts.findAll({ where: { customerId: customerId } });
+    return res.send({
+      code: '200',
+      status: 'SUCCESS',
+      data: {
+        cart,
+      },
+    });
+  } catch (err) {
+    return res.send({
+      code: '400',
+      status: 'BAD_REQUEST',
+      message: err.message,
+    });
+  }
+});
+
+//increment one specific product with id
 router.put('/:id', IsAuth, async function (req, res, next) {
   try {
     const productId = req.params.id;
@@ -52,7 +69,7 @@ router.put('/:id', IsAuth, async function (req, res, next) {
   }
 });
 
-//decrement one specific item with id
+//decrement one specific product with id
 router.put('/:id', IsAuth, async function (req, res, next) {
   try {
     const productId = req.params.id;
