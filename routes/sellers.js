@@ -6,7 +6,7 @@ const model = require('../models/index');
 const admin = require('../admin');
 
 //create new seller
-router.post('/', IsAuth, async function (req, res, next) {
+router.post('/', async function (req, res, next) {
   const { name, email, phone, uid, photoURL } = req.body;
 
   const seller = await model.sellers.create({
@@ -17,26 +17,30 @@ router.post('/', IsAuth, async function (req, res, next) {
     uid,
   });
 
-  return await admin
-    .auth()
-    .setCustomUserClaims(uid, { seller: true })
-    .then(() => {
-      console.log("SUCCESS");
-      res.send({
-        code: 200,
-        status: 'STATUS',
-        data: {
-          seller,
-        },
-      });
-    })
-    .catch((err) => {
-      return res.send({
-        code: 400,
-        status: 'BAD_REQUEST',
-        message: err.message,
-      });
-    });
+  return res.json({
+    status: 'SECCESS',
+  });
+
+  // return await admin
+  //   .auth()
+  //   .setCustomUserClaims(uid, { seller: true })
+  //   .then(() => {
+  //     console.log('SUCCESS');
+  //     res.send({
+  //       code: 200,
+  //       status: 'STATUS',
+  //       data: {
+  //         seller,
+  //       },
+  //     });
+  //   })
+  //   .catch((err) => {
+  //     return res.send({
+  //       code: 400,
+  //       status: 'BAD_REQUEST',
+  //       message: err.message,
+  //     });
+  //   });
 });
 
 router.get('/get/products', async function (req, res, next) {
@@ -67,7 +71,7 @@ router.get('/:uid', async function (req, res, next) {
     const uid = req.params.uid;
     const seller = await model.sellers.findOne({
       where: { uid: uid },
-      include: "products",
+      include: 'products',
     });
     return res.send({
       code: 200,
