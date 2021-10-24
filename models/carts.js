@@ -1,7 +1,5 @@
 'use strict';
-const {
-  Model
-} = require('sequelize');
+const { Model, DATE } = require('sequelize');
 module.exports = (sequelize, DataTypes) => {
   class carts extends Model {
     /**
@@ -12,14 +10,22 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       // define association here
     }
-  };
-  carts.init({
-    productId: DataTypes.INTEGER,
-    customerId: DataTypes.INTEGER,
-    total: DataTypes.INTEGER
-  }, {
-    sequelize,
-    modelName: 'carts',
-  });
+  }
+  carts.init(
+    {
+      customerUId: DataTypes.INTEGER,
+      namaPenerima: DataTypes.STRING,
+      email: DataTypes.STRING,
+      noTelp: DataTypes.STRING,
+      alamat: DataTypes.STRING,
+      totalPrice: DataTypes.INTEGER,
+      status: DataTypes.INTEGER,
+      namaKurir: DataTypes.STRING,
+    },
+    {
+      sequelize,
+      modelName: 'carts',
+    }
+  );
   return carts;
 };

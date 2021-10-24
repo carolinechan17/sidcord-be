@@ -4,12 +4,46 @@ const model = require('../models/index');
 const IsAuth = require('../middleware/IsAuth');
 
 //add to cart
-router.post('/', IsAuth, async function (req, res, next) {
+router.post('/:uid', async function (req, res, next) {
   try {
-    const { productId, customerId, quantity } = req.body;
-    const price = await model.products.findOne({ where: { id: productId } });
-    const totalPrice = price * quantity;
-    const cart = await model.carts.create({ productId, customerId, quantity, totalPrice });
+    const uid = req.params.uid;
+    const cart = await model.carts.findOne({ where: { customerUID: uid } && { status: 0 } });
+    if (cart == null) {
+      cart = await model.carts.create({
+        totalPrice: 0,
+        status: 0,
+      });
+    }
+    const { name, slug, price, sellerUID, thumbnail, description } = req.body;
+    const { stock } = await model.products.findOne({ where: { name: name } });
+    const product = await model.products.update({ stock: stock - 1 }, { where: { name: name } });
+    const cartItem = await model.cartItems.create({
+      name,
+      slug,
+      price,
+      sellerUID,
+      thumbnail,
+      description,
+      cartId: cart.id,
+    });
+    res.send({
+      code: '200',
+      status: 'SUCCESS',
+      data: {
+        cartItem,
+        product,
+      },
+    });
+  } catch (err) {
+    res.status(err).send();
+  }
+});
+
+//return cart data by uid
+router.get('/:uid', IsAuth, async function (req, res, next) {
+  try {
+    const uid = req.params.uid;
+    const cart = await model.carts.findOne({ where: { customerUID: uid } && { status: 0 } });
     return res.send({
       code: '200',
       status: 'SUCCESS',
@@ -18,41 +52,33 @@ router.post('/', IsAuth, async function (req, res, next) {
       },
     });
   } catch (err) {
-    return res.send({
-      code: '400',
-      status: 'BAD_REQUEST',
-      message: err.message,
-    });
+    res.status(err).send();
   }
 });
 
-//return all item in cart with customer id
+//return all cartItem by cartId
 router.get('/:id', IsAuth, async function (req, res, next) {
   try {
-    const customerId = req.params.id;
-    const cart = await model.carts.findAll({ where: { customerId: customerId } });
+    const id = req.params.id;
+    const cartItem = await model.cartItems.findAll({ where: { cartId: id } });
     return res.send({
       code: '200',
       status: 'SUCCESS',
       data: {
-        cart,
+        cartItem,
       },
     });
   } catch (err) {
-    return res.send({
-      code: '400',
-      status: 'BAD_REQUEST',
-      message: err.message,
-    });
+    res.status(err).send();
   }
 });
 
-//increment one specific item with id
+//checkout by cartId
 router.put('/:id', IsAuth, async function (req, res, next) {
   try {
-    const productId = req.params.id;
-    const quantity = quantity - 1;
-    const cart = await model.carts.update({ quantity }, { where: { productId: productId } });
+    const id = req.params.id;
+    const totalPrice = await model.cartItem.sum({ price }, { where: { cartId: id } });
+    const cart = await model.carts.update({ status: 1, totalPrice }, { where: { id: id } });
     return res.send({
       code: '200',
       status: 'SUCCESS',
@@ -61,77 +87,8 @@ router.put('/:id', IsAuth, async function (req, res, next) {
       },
     });
   } catch (err) {
-    return res.send({
-      code: '400',
-      status: 'BAD_REQUEST',
-      message: err.message,
-    });
+    res.status(err).send();
   }
 });
 
-//decrement one specific item with id
-router.put('/:id', IsAuth, async function (req, res, next) {
-  try {
-    const productId = req.params.id;
-    const quantity = quantity + 1;
-    const cart = await model.carts.update({ quantity }, { where: { productId: productId } });
-    return res.send({
-      code: '200',
-      status: 'SUCCESS',
-      data: {
-        cart,
-      },
-    });
-  } catch (err) {
-    return res.send({
-      code: '400',
-      status: 'BAD_REQUEST',
-      message: err.message,
-    });
-  }
-});
-
-//delete one item with id
-router.delete('/:id', IsAuth, async function (req, res, next) {
-  try {
-    const productId = req.params.id;
-    const cart = await model.carts.destroy({ where: { productId: productId } });
-    return res.send({
-      code: '200',
-      status: 'SUCCESS',
-      data: {
-        cart,
-      },
-    });
-  } catch (err) {
-    return res.send({
-      code: '400',
-      status: 'BAD_REQUEST',
-      message: err.message,
-    });
-  }
-});
-
-//delete all item in cart with customer id
-router.delete('/:id', IsAuth, async function (req, res, next) {
-  try {
-    const customerId = req.params.id;
-    const cart = await model.carts.destroy({
-      where: { customerId: customerId },
-    });
-    return res.send({
-      code: '200',
-      status: 'SUCCESS',
-      data: {
-        cart,
-      },
-    });
-  } catch (err) {
-    return res.send({
-      code: '400',
-      status: 'BAD_REQUEST',
-      message: err.message,
-    });
-  }
-});
 module.exports = router;
