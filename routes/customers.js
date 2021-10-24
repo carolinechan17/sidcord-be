@@ -31,7 +31,7 @@ router.post("/", IsAuth, async function (req, res, next) {
 });
 
 //return customer data with id
-router.get("/:uid", IsAuth, async function (req, res, next) {
+router.get("/:uid", async function (req, res, next) {
   try {
     const uid = req.params.uid;
     const customer = await model.customers.findOne({ where: { uid: uid } });

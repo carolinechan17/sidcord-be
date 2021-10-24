@@ -47,7 +47,7 @@ router.get('/:id', IsAuth, async function (req, res, next) {
   }
 });
 
-//increment one specific product with id
+//increment one specific item with id
 router.put('/:id', IsAuth, async function (req, res, next) {
   try {
     const productId = req.params.id;
@@ -69,7 +69,7 @@ router.put('/:id', IsAuth, async function (req, res, next) {
   }
 });
 
-//decrement one specific product with id
+//decrement one specific item with id
 router.put('/:id', IsAuth, async function (req, res, next) {
   try {
     const productId = req.params.id;
@@ -116,7 +116,9 @@ router.delete('/:id', IsAuth, async function (req, res, next) {
 router.delete('/:id', IsAuth, async function (req, res, next) {
   try {
     const customerId = req.params.id;
-    const cart = await model.carts.destroy({ where: { customerId: customerId } });
+    const cart = await model.carts.destroy({
+      where: { customerId: customerId },
+    });
     return res.send({
       code: '200',
       status: 'SUCCESS',
@@ -132,3 +134,4 @@ router.delete('/:id', IsAuth, async function (req, res, next) {
     });
   }
 });
+module.exports = router;

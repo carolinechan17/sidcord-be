@@ -21,6 +21,7 @@ router.post('/', IsAuth, async function (req, res, next) {
     .auth()
     .setCustomUserClaims(uid, { seller: true })
     .then(() => {
+      console.log("SUCCESS");
       res.send({
         code: 200,
         status: 'STATUS',
@@ -52,7 +53,7 @@ router.get('/get/products', async function (req, res, next) {
       },
     });
   } catch (err) {
-    return res.send({
+    return res.status(400).send({
       code: 400,
       status: 'BAD_REQUEST',
       message: err.message,

@@ -9,7 +9,6 @@ async function IsSeller(req, res, next) {
       console.log(error);
       return error;
     });
-  console.log(decodedToken);
 
   if (decodedToken.message) {
     return res.status(403).json(decodedToken);
