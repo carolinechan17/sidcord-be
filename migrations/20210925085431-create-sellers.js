@@ -20,7 +20,7 @@ module.exports = {
       photoURL: {
         type: Sequelize.STRING,
       },
-      sellerUID: {
+      uid: {
         type: Sequelize.STRING,
       },
       bio: {

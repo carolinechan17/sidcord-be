@@ -21,6 +21,7 @@ router.post("/", IsAuth, async function (req, res, next) {
     .auth()
     .setCustomUserClaims(uid, { seller: true })
     .then(() => {
+      console.log("SUCCESS");
       res.send({
         code: 200,
         status: "STATUS",
