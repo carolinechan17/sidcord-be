@@ -26,7 +26,7 @@ module.exports = {
       stock: {
         type: Sequelize.INTEGER,
       },
-      sellerId: {
+      sellerUID: {
         type: Sequelize.STRING,
       },
       createdAt: {

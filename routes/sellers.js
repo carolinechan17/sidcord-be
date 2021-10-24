@@ -53,7 +53,7 @@ router.get("/get/products", IsSeller, async function (req, res, next) {
       },
     });
   } catch (err) {
-    return res.send({
+    return res.status(400).send({
       code: 400,
       status: "BAD_REQUEST",
       message: err.message,

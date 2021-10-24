@@ -9,6 +9,9 @@ router.post("/", async function (req, res, next) {
   try {
     const { name, slug, price, stock, sellerUID, thumbnail, description } =
       req.body;
+
+    console.log(" req.body : ", req.body);
+
     const product = await model.products.create({
       name,
       slug,
@@ -18,6 +21,9 @@ router.post("/", async function (req, res, next) {
       thumbnail,
       description,
     });
+
+    console.log("product : ", product);
+
     return res.send({
       code: 200,
       status: "SUCCESS",
@@ -26,7 +32,7 @@ router.post("/", async function (req, res, next) {
       },
     });
   } catch (err) {
-    return res.send({
+    return res.status(400).send({
       code: 400,
       status: "BAD_REQUEST",
       message: err.message,
