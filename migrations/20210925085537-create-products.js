@@ -15,19 +15,25 @@ module.exports = {
         type: Sequelize.STRING,
       },
       description: {
-        type: Sequelize.STRING,
+        type: Sequelize.TEXT,
       },
       slug: {
         type: Sequelize.STRING,
       },
       price: {
         type: Sequelize.INTEGER,
+        defaultValue: 0,
       },
       stock: {
         type: Sequelize.INTEGER,
+        defaultValue: 0,
       },
       sellerUID: {
         type: Sequelize.STRING,
+        references: {
+          model: "sellers",
+          key: "uid",
+        },
       },
       createdAt: {
         allowNull: false,

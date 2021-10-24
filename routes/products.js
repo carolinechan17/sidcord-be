@@ -9,9 +9,6 @@ router.post("/", async function (req, res, next) {
   try {
     const { name, slug, price, stock, sellerUID, thumbnail, description } =
       req.body;
-
-    console.log(" req.body : ", req.body);
-
     const product = await model.products.create({
       name,
       slug,
@@ -21,9 +18,6 @@ router.post("/", async function (req, res, next) {
       thumbnail,
       description,
     });
-
-    console.log("product : ", product);
-
     return res.send({
       code: 200,
       status: "SUCCESS",

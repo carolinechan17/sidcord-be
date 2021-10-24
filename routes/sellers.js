@@ -65,7 +65,10 @@ router.get('/get/products', async function (req, res, next) {
 router.get('/:uid', async function (req, res, next) {
   try {
     const uid = req.params.uid;
-    const seller = await model.sellers.findOne({ where: { uid: uid } });
+    const seller = await model.sellers.findOne({
+      where: { uid: uid },
+      include: "products",
+    });
     return res.send({
       code: 200,
       status: 'SUCCESS',

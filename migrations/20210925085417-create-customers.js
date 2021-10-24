@@ -13,6 +13,7 @@ module.exports = {
       },
       email: {
         type: Sequelize.STRING,
+        unique: true,
       },
       phone: {
         type: Sequelize.STRING,
@@ -22,6 +23,7 @@ module.exports = {
       },
       uid: {
         type: Sequelize.STRING,
+        unique: true,
       },
       bio: {
         type: Sequelize.STRING,
