@@ -3,11 +3,13 @@ const router = express.Router();
 const model = require('../models/index');
 const IsAuth = require('../middleware/IsAuth');
 const { op } = require('sequelize');
+const { sequelize } = require('../models/index');
 
-//add to cart with customer uid
-router.post('/:uid', async function (req, res, next) {
+//add to cart with customer id
+router.post('/:id', async function (req, res, next) {
   try {
-    const uid = req.params.uid;
+    const id = req.params.id;
+    const { uid } = await model.customers.findOne({ where: { id: id } });
     //check apakah cart dengan uid dan status 0 sudah ada
     var cart = await model.carts.findOne({ where: { customerUID: uid, status: 0 } });
     //jika tidak, maka akan dibuat
@@ -77,12 +79,13 @@ router.get('/:id', IsAuth, async function (req, res, next) {
 });
 
 //checkout by cartId
-//pada checkout, customer akan mengisi data namaPenerima, email, phone,
-router.put('/:id', IsAuth, async function (req, res, next) {
+//pada checkout, customer akan mengisi data namaPenerima, email, noTelp, alamat, namaKurir
+router.put('/checkout/:id', async function (req, res, next) {
   try {
     const id = req.params.id;
-    const totalPrice = await model.cartItem.sum({ price }, { where: { cartId: id } });
-    const cart = await model.carts.update({ status: 1, totalPrice }, { where: { id: id } });
+    const { namaPenerima, email, noTelp, alamat, namaKurir } = req.body;
+    const totalPrice = await model.cartItems.sum('price', { where: { cartId: id } });
+    const cart = await model.carts.update({ namaPenerima, email, noTelp, alamat, totalPrice, status: 1, namaKurir }, { where: { id: id } });
     return res.send({
       code: '200',
       status: 'SUCCESS',
