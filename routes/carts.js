@@ -2,19 +2,22 @@ const express = require('express');
 const router = express.Router();
 const model = require('../models/index');
 const IsAuth = require('../middleware/IsAuth');
+const { op } = require('sequelize');
 
-//add to cart
+//add to cart with customer uid
 router.post('/:uid', async function (req, res, next) {
   try {
     const uid = req.params.uid;
-    const cart = await model.carts.findOne({ where: { customerUID: uid } && { status: 0 } });
-    if (cart == null) {
+    //check apakah cart dengan uid dan status 0 sudah ada
+    const cart = await model.carts.findOne({ where: { customerUID: uid, status: 0 } });
+    //jika tidak, maka akan dibuat
+    if (!cart) {
       cart = await model.carts.create({
-        totalPrice: 0,
         status: 0,
       });
     }
     const { name, slug, price, sellerUID, thumbnail, description } = req.body;
+    //mengurangi stock dari produk (-1)
     const { stock } = await model.products.findOne({ where: { name: name } });
     const product = await model.products.update({ stock: stock - 1 }, { where: { name: name } });
     const cartItem = await model.cartItems.create({
