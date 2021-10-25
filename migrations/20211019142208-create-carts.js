@@ -37,6 +37,7 @@ module.exports = {
       },
       status: {
         type: Sequelize.INTEGER,
+        defaultValue: 0,
       },
       namaKurir: {
         type: Sequelize.STRING,

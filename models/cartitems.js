@@ -1,9 +1,8 @@
 'use strict';
-const {
-  Model
-} = require('sequelize');
+const { database } = require('firebase-admin');
+const { Model } = require('sequelize');
 module.exports = (sequelize, DataTypes) => {
-  class cartItem extends Model {
+  class cartItems extends Model {
     /**
      * Helper method for defining associations.
      * This method is not a part of Sequelize lifecycle.
@@ -12,12 +11,21 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       // define association here
     }
-  };
-  cartItem.init({
-    name: DataTypes.STRING
-  }, {
-    sequelize,
-    modelName: 'cartItem',
-  });
-  return cartItem;
+  }
+  cartItems.init(
+    {
+      name: DataTypes.STRING,
+      slug: DataTypes.STRING,
+      price: DataTypes.INTEGER,
+      sellerUID: DataTypes.STRING,
+      thumbnail: DataTypes.STRING,
+      description: DataTypes.STRING,
+      cartId: DataTypes.INTEGER,
+    },
+    {
+      sequelize,
+      modelName: 'cartItems',
+    }
+  );
+  return cartItems;
 };

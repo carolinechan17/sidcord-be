@@ -13,7 +13,7 @@ module.exports = (sequelize, DataTypes) => {
   }
   carts.init(
     {
-      customerUId: DataTypes.INTEGER,
+      customerUID: DataTypes.INTEGER,
       namaPenerima: DataTypes.STRING,
       email: DataTypes.STRING,
       noTelp: DataTypes.STRING,

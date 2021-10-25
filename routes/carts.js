@@ -9,13 +9,14 @@ router.post('/:uid', async function (req, res, next) {
   try {
     const uid = req.params.uid;
     //check apakah cart dengan uid dan status 0 sudah ada
-    const cart = await model.carts.findOne({ where: { customerUID: uid, status: 0 } });
+    var cart = await model.carts.findOne({ where: { customerUID: uid, status: 0 } });
     //jika tidak, maka akan dibuat
-    if (!cart) {
+    if (cart == null) {
       cart = await model.carts.create({
-        status: 0,
+        customerUID: uid,
       });
     }
+    const cartId = cart.id;
     const { name, slug, price, sellerUID, thumbnail, description } = req.body;
     //mengurangi stock dari produk (-1)
     const { stock } = await model.products.findOne({ where: { name: name } });
@@ -27,14 +28,13 @@ router.post('/:uid', async function (req, res, next) {
       sellerUID,
       thumbnail,
       description,
-      cartId: cart.id,
+      cartId,
     });
     res.send({
       code: '200',
       status: 'SUCCESS',
       data: {
         cartItem,
-        product,
       },
     });
   } catch (err) {
@@ -77,6 +77,7 @@ router.get('/:id', IsAuth, async function (req, res, next) {
 });
 
 //checkout by cartId
+//pada checkout, customer akan mengisi data namaPenerima, email, phone,
 router.put('/:id', IsAuth, async function (req, res, next) {
   try {
     const id = req.params.id;
