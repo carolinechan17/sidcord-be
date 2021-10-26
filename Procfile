@@ -1,1 +1,1 @@
-web: node ./bin/www
+web: npx sequelize db:migrate && node ./bin/www
