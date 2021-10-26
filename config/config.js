@@ -18,7 +18,11 @@ const config = {
     database: process.env.DB_NAME || "sidcord",
     host: process.env.DB_HOST || "127.0.0.1",
     dialect: process.env.DB_DIALECT || "mysql",
-    dialectOptions: {},
+    dialectOptions: {
+      ssl: {
+        rejectUnauthorized: false,
+      },
+    },
   },
   test: {
     username: "root",
