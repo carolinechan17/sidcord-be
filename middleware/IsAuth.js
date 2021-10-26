@@ -3,6 +3,10 @@ const admin = require("../admin");
 async function IsAuth(req, res, next) {
   const token = req.header("authentication");
 
+  if (!token) {
+    return res.status(401).json({ message: "missing authentication header" });
+  }
+
   const decodedToken = await admin
     .auth()
     .verifyIdToken(token)
