@@ -1,100 +1,127 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const model = require('../models/index');
-const IsAuth = require('../middleware/IsAuth');
-const { op } = require('sequelize');
-const { sequelize } = require('../models/index');
-
+const model = require("../models/index");
+const { Op } = require("sequelize");
+const IsAuth = require("../middleware/IsAuth");
 //add to cart with customer id
-router.post('/:id', async function (req, res, next) {
+router.post("/", async function (req, res) {
   try {
-    const id = req.params.id;
-    const { uid } = await model.customers.findOne({ where: { id: id } });
+    const { customerUID, productId } = req.body;
+
+    if (!productId || !customerUID) {
+      return res.status(401).json({ message: "missing require data" });
+    }
+
     //check apakah cart dengan uid dan status 0 sudah ada
-    var cart = await model.carts.findOne({ where: { customerUID: uid, status: 0 } });
+    let cart = await model.carts.findOne({
+      where: { customerUID: customerUID, status: 0 },
+    });
     //jika tidak, maka akan dibuat
-    if (cart == null) {
+    if (!cart) {
       cart = await model.carts.create({
-        customerUID: uid,
+        customerUID: customerUID,
+        totalQuantity: 0,
+        totalPrice: 0,
       });
     }
     const cartId = cart.id;
-    const { name, slug, price, sellerUID, thumbnail, description } = req.body;
     //mengurangi stock dari produk (-1)
-    const { stock } = await model.products.findOne({ where: { name: name } });
-    const product = await model.products.update({ stock: stock - 1 }, { where: { name: name } });
-    const cartItem = await model.cartItems.create({
-      name,
-      slug,
-      price,
-      sellerUID,
-      thumbnail,
-      description,
-      cartId,
+    const Product = await model.products.findOne({ where: { id: productId } });
+    const { name, slug, price, sellerUID, thumbnail, description } = Product;
+    await Product.increment("stock", {
+      by: -1,
     });
-    res.send({
-      code: '200',
-      status: 'SUCCESS',
+    let cartItem = await model.cartItems.findOne({
+      where: { cartId: cartId, slug: slug },
+    });
+    if (!cartItem) {
+      cartItem = await model.cartItems.create({
+        cartId,
+        name,
+        slug,
+        price,
+        sellerUID,
+        description,
+        thumbnail,
+        quantity: 1,
+      });
+    } else {
+      cartItem.increment("quantity", {
+        by: 1,
+      });
+    }
+    await cart.increment({
+      totalQuantity: 1,
+      totalPrice: Product.price,
+    });
+
+    res.json({
       data: {
         cartItem,
       },
     });
   } catch (err) {
-    res.status(err).send();
-  }
-});
-
-//return cart data by uid
-router.get('/:uid', IsAuth, async function (req, res, next) {
-  try {
-    const uid = req.params.uid;
-    const cart = await model.carts.findOne({ where: { customerUID: uid } && { status: 0 } });
-    return res.send({
-      code: '200',
-      status: 'SUCCESS',
-      data: {
-        cart,
-      },
-    });
-  } catch (err) {
-    res.status(err).send();
+    console.log(err);
+    res.status(400).json(err);
   }
 });
 
 //return all cartItem by cartId
-router.get('/:id', IsAuth, async function (req, res, next) {
+router.get("/:id", async function (req, res) {
   try {
-    const id = req.params.id;
-    const cartItem = await model.cartItems.findAll({ where: { cartId: id } });
-    return res.send({
-      code: '200',
-      status: 'SUCCESS',
-      data: {
-        cartItem,
-      },
+    const customerUID = req.params.id;
+    const carts = await model.carts.findOne({
+      where: { customerUID: customerUID, status: 0 },
+      include: "cartItems",
+    });
+    return res.json({
+      data: carts,
     });
   } catch (err) {
-    res.status(err).send();
+    res.status(400).json(err);
+  }
+});
+//return all cartItem by cartId
+router.get("/checkout/:id", async function (req, res) {
+  try {
+    const customerUID = req.params.id;
+    const carts = await model.carts.findAll({
+      where: {
+        customerUID: customerUID,
+        status: {
+          [Op.gte]: 0,
+        },
+      },
+      include: "cartItems",
+    });
+    return res.json({
+      data: carts,
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(400).json(err);
   }
 });
 
 //checkout by cartId
 //pada checkout, customer akan mengisi data namaPenerima, email, noTelp, alamat, namaKurir
-router.put('/checkout/:id', async function (req, res, next) {
+router.put("/checkout", async function (req, res) {
   try {
-    const id = req.params.id;
-    const { namaPenerima, email, noTelp, alamat, namaKurir } = req.body;
-    const totalPrice = await model.cartItems.sum('price', { where: { cartId: id } });
-    const cart = await model.carts.update({ namaPenerima, email, noTelp, alamat, totalPrice, status: 1, namaKurir }, { where: { id: id } });
+    const { namaPenerima, email, noTelp, alamat, namaKurir, id } = req.body;
+    const totalPrice = await model.cartItems.sum("price", {
+      where: { cartId: id },
+    });
+    const cart = await model.carts.update(
+      { namaPenerima, email, noTelp, alamat, totalPrice, status: 1, namaKurir },
+      { where: { id: id } }
+    );
     return res.send({
-      code: '200',
-      status: 'SUCCESS',
       data: {
         cart,
       },
     });
   } catch (err) {
-    res.status(err).send();
+    res.status(400).json(err);
   }
 });
 
