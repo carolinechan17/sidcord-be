@@ -6,6 +6,11 @@ const config = {
     database: process.env.DB_NAME || "sidcord",
     host: process.env.DB_HOST || "127.0.0.1",
     dialect: process.env.DB_DIALECT || "mysql",
+    dialectOptions: {
+      ssl: {
+        rejectUnauthorized: false,
+      },
+    },
   },
   production: {
     username: process.env.DB_USERNAME || "root",
