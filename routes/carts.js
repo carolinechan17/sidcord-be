@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const model = require("../models/index");
 const { Op } = require("sequelize");
+const snap = require("../Midtrans");
 const IsAuth = require("../middleware/IsAuth");
 //add to cart with customer id
 router.post("/", async function (req, res) {
@@ -28,9 +29,7 @@ router.post("/", async function (req, res) {
     //mengurangi stock dari produk (-1)
     const Product = await model.products.findOne({ where: { id: productId } });
     const { name, slug, price, sellerUID, thumbnail, description } = Product;
-    await Product.increment("stock", {
-      by: -1,
-    });
+
     let cartItem = await model.cartItems.findOne({
       where: { cartId: cartId, slug: slug },
     });
@@ -53,6 +52,9 @@ router.post("/", async function (req, res) {
     await cart.increment({
       totalQuantity: 1,
       totalPrice: Product.price,
+    });
+    await Product.increment("stock", {
+      by: -1,
     });
 
     res.json({
@@ -78,6 +80,7 @@ router.get("/:id", async function (req, res) {
       data: carts,
     });
   } catch (err) {
+    console.log(err);
     res.status(400).json(err);
   }
 });
@@ -92,6 +95,7 @@ router.get("/checkout/:id", async function (req, res) {
           [Op.gte]: 0,
         },
       },
+      order: [["createdAt", "DESC"]],
       include: "cartItems",
     });
     return res.json({
@@ -107,20 +111,58 @@ router.get("/checkout/:id", async function (req, res) {
 //pada checkout, customer akan mengisi data namaPenerima, email, noTelp, alamat, namaKurir
 router.put("/checkout", async function (req, res) {
   try {
-    const { namaPenerima, email, noTelp, alamat, namaKurir, id } = req.body;
-    const totalPrice = await model.cartItems.sum("price", {
+    const { namaPenerima, email, noTelp, alamat, namaKurir, id, customerUID } =
+      req.body;
+    const cartItems = await model.cartItems.findAll({
       where: { cartId: id },
     });
+    let totalPrice = 0;
+    let item_details = [];
+
+    cartItems.forEach((item) => {
+      totalPrice += item.price * item.quantity;
+      item_details.push({
+        id: item.slug,
+        price: item.price,
+        quantity: item.quantity,
+        name: item.name,
+        brand: "",
+        category: "Compe",
+        merchant_name: "",
+      });
+    });
+
     const cart = await model.carts.update(
       { namaPenerima, email, noTelp, alamat, totalPrice, status: 1, namaKurir },
       { where: { id: id } }
     );
+
+    const arrName = namaPenerima.split(/\s/gi);
+
+    const parameter = {
+      transaction_details: {
+        order_id: `${id}-${customerUID}`,
+        gross_amount: totalPrice,
+      },
+      item_details: item_details,
+      customer_details: {
+        first_name: arrName[0],
+        last_name: arrName.length > 1 ? arrName[arrName.length - 1] : "",
+        email: email,
+        phone: noTelp,
+      },
+      enabled_payments: ["bri_va", "bca_va", "bni_va", "gopay"],
+    };
+    console.log(parameter);
+    const snapLink = await snap.createTransaction(parameter);
     return res.send({
       data: {
         cart,
+        redirectUrl: snapLink.redirect_url,
       },
     });
   } catch (err) {
+    console.log(err);
     res.status(400).json(err);
   }
 });
