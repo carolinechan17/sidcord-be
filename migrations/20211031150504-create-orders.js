@@ -18,21 +18,27 @@ module.exports = {
       },
       namaPenerima: {
         type: Sequelize.STRING,
+        allowNull: true,
       },
       email: {
         type: Sequelize.STRING,
+        allowNull: true,
       },
       noTelp: {
         type: Sequelize.STRING,
+        allowNull: true,
       },
       alamat: {
         type: Sequelize.STRING,
+        allowNull: true,
       },
       totalPrice: {
         type: Sequelize.INTEGER,
+        allowNull: true,
       },
       totalQuantity: {
         type: Sequelize.INTEGER,
+        allowNull: true,
       },
       status: {
         type: Sequelize.INTEGER,

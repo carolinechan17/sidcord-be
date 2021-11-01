@@ -1,34 +1,49 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const model = require("../models/index");
-const { Op } = require("sequelize");
-const snap = require("../Midtrans");
-const IsAuth = require("../middleware/IsAuth");
-//add to cart with customer id
-router.post("/", async function (req, res) {
+const model = require('../models/index');
+const { Op } = require('sequelize');
+const snap = require('../Midtrans');
+const IsAuth = require('../middleware/IsAuth');
+
+//add to cart with customerUID
+router.post('/', async function (req, res) {
   try {
-    const { customerUID, productId } = req.body;
+    const { customerUID, productId, sellerUID } = req.body;
 
     if (!productId || !customerUID) {
-      return res.status(401).json({ message: "missing require data" });
+      return res.status(401).json({ message: 'missing require data' });
     }
 
-    //check apakah cart dengan uid dan status 0 sudah ada
-    let cart = await model.carts.findOne({
+    //check apakah order dengan customerUID dan status 0 sudah ada
+    let order = await model.orders.findOne({
       where: { customerUID: customerUID, status: 0 },
     });
-    //jika tidak, maka akan dibuat
-    if (!cart) {
-      cart = await model.carts.create({
+    //jika tidak ada, maka akan dibuat
+    if (!order) {
+      order = await model.orders.create({
         customerUID: customerUID,
         totalQuantity: 0,
         totalPrice: 0,
       });
     }
+    const orderId = order.id;
+
+    //check apakah cart dengan orderId dan sellerUID sudah ada
+    let cart = await model.carts.findOne({
+      where: { orderId: orderId, sellerUID: sellerUID },
+    });
+    //jika tidak ada, maka akan dibuat
+    if (!cart) {
+      cart = await model.carts.create({
+        orderId: orderId,
+        sellerUID: sellerUID,
+      });
+    }
     const cartId = cart.id;
+
     //mengurangi stock dari produk (-1)
     const Product = await model.products.findOne({ where: { id: productId } });
-    const { name, slug, price, sellerUID, thumbnail, description } = Product;
+    const { name, slug, price, thumbnail } = Product;
 
     let cartItem = await model.cartItems.findOne({
       where: { cartId: cartId, slug: slug },
@@ -40,12 +55,11 @@ router.post("/", async function (req, res) {
         slug,
         price,
         sellerUID,
-        description,
         thumbnail,
         quantity: 1,
       });
     } else {
-      cartItem.increment("quantity", {
+      cartItem.increment('quantity', {
         by: 1,
       });
     }
@@ -53,7 +67,7 @@ router.post("/", async function (req, res) {
       totalQuantity: 1,
       totalPrice: Product.price,
     });
-    await Product.increment("stock", {
+    await Product.increment('stock', {
       by: -1,
     });
 
@@ -69,12 +83,12 @@ router.post("/", async function (req, res) {
 });
 
 //return all cartItem by cartId
-router.get("/:id", async function (req, res) {
+router.get('/:id', async function (req, res) {
   try {
     const customerUID = req.params.id;
     const carts = await model.carts.findOne({
       where: { customerUID: customerUID, status: 0 },
-      include: "cartItems",
+      include: 'cartItems',
     });
     return res.json({
       data: carts,
@@ -84,8 +98,9 @@ router.get("/:id", async function (req, res) {
     res.status(400).json(err);
   }
 });
+
 //return all cartItem by cartId
-router.get("/checkout/:id", async function (req, res) {
+router.get('/checkout/:id', async function (req, res) {
   try {
     const customerUID = req.params.id;
     const carts = await model.carts.findAll({
@@ -95,8 +110,8 @@ router.get("/checkout/:id", async function (req, res) {
           [Op.gte]: 0,
         },
       },
-      order: [["createdAt", "DESC"]],
-      include: "cartItems",
+      order: [['createdAt', 'DESC']],
+      include: 'cartItems',
     });
     return res.json({
       data: carts,
@@ -109,10 +124,9 @@ router.get("/checkout/:id", async function (req, res) {
 
 //checkout by cartId
 //pada checkout, customer akan mengisi data namaPenerima, email, noTelp, alamat, namaKurir
-router.put("/checkout", async function (req, res) {
+router.put('/checkout', async function (req, res) {
   try {
-    const { namaPenerima, email, noTelp, alamat, namaKurir, id, customerUID } =
-      req.body;
+    const { namaPenerima, email, noTelp, alamat, namaKurir, id, customerUID } = req.body;
     const cartItems = await model.cartItems.findAll({
       where: { cartId: id },
     });
@@ -126,16 +140,13 @@ router.put("/checkout", async function (req, res) {
         price: item.price,
         quantity: item.quantity,
         name: item.name,
-        brand: "",
-        category: "Compe",
-        merchant_name: "",
+        brand: '',
+        category: 'Compe',
+        merchant_name: '',
       });
     });
 
-    const cart = await model.carts.update(
-      { namaPenerima, email, noTelp, alamat, totalPrice, status: 1, namaKurir },
-      { where: { id: id } }
-    );
+    const cart = await model.carts.update({ namaPenerima, email, noTelp, alamat, totalPrice, status: 1, namaKurir }, { where: { id: id } });
 
     const arrName = namaPenerima.split(/\s/gi);
 
@@ -147,11 +158,11 @@ router.put("/checkout", async function (req, res) {
       item_details: item_details,
       customer_details: {
         first_name: arrName[0],
-        last_name: arrName.length > 1 ? arrName[arrName.length - 1] : "",
+        last_name: arrName.length > 1 ? arrName[arrName.length - 1] : '',
         email: email,
         phone: noTelp,
       },
-      enabled_payments: ["bri_va", "bca_va", "bni_va", "gopay"],
+      enabled_payments: ['bri_va', 'bca_va', 'bni_va', 'gopay'],
     };
     console.log(parameter);
     const snapLink = await snap.createTransaction(parameter);

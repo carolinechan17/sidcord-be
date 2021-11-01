@@ -12,7 +12,9 @@ module.exports = (sequelize, DataTypes) => {
       orders.hasMany(models.carts, {
         foreignKey: {
           name: 'orderId',
+          type: DataTypes.INTEGER,
         },
+        sourceKey: 'id',
         as: 'carts',
       });
     }

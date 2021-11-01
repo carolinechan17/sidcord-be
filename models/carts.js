@@ -11,7 +11,9 @@ module.exports = (sequelize, DataTypes) => {
       carts.hasMany(models.cartItems, {
         foreignKey: {
           name: 'cartId',
+          type: DataTypes.INTEGER,
         },
+        sourceKey: 'id',
         as: 'cartItems',
       });
     }
@@ -21,6 +23,7 @@ module.exports = (sequelize, DataTypes) => {
       orderId: DataTypes.INTEGER,
       ongkir: DataTypes.INTEGER,
       kurirId: DataTypes.INTEGER,
+      sellerUID: DataTypes.STRING,
     },
     {
       sequelize,
