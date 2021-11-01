@@ -28,8 +28,8 @@ module.exports = {
         type: Sequelize.STRING,
         allowNull: true,
       },
-      alamat: {
-        type: Sequelize.STRING,
+      alamatIs: {
+        type: Sequelize.INTEGER,
         allowNull: true,
       },
       totalPrice: {

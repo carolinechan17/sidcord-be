@@ -126,7 +126,7 @@ router.get('/checkout/:id', async function (req, res) {
 //pada checkout, customer akan mengisi data namaPenerima, email, noTelp, alamat, namaKurir
 router.put('/checkout', async function (req, res) {
   try {
-    const { namaPenerima, email, noTelp, alamat, namaKurir, id, customerUID } = req.body;
+    const { namaPenerima, email, noTelp, alamat, kurirId, id, customerUID } = req.body;
     const cartItems = await model.cartItems.findAll({
       where: { cartId: id },
     });
