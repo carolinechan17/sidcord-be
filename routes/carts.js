@@ -147,9 +147,9 @@ router.put('/checkout', async function (req, res) {
     });
 
     const address = await model.addresses.findOne({
-      where: { id: alamatId}
+      where: { id: alamatId },
     });
-    let alamat_details = []
+    let alamat_details = [];
 
     address.forEach((alamat) => {
       alamat_details.push({
@@ -176,7 +176,7 @@ router.put('/checkout', async function (req, res) {
         phone: noTelp,
       },
       alamat_details: alamat_details,
-      idKurir = `${kurirId}`,
+      idKurir: `${kurirId}`,
       enabled_payments: ['bri_va', 'bca_va', 'bni_va', 'gopay'],
     };
     console.log(parameter);
