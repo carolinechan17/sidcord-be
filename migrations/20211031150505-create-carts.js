@@ -28,6 +28,10 @@ module.exports = {
       },
       sellerUID: {
         type: Sequelize.STRING,
+        references: {
+          model: "sellers",
+          key: "uid",
+        },
       },
       createdAt: {
         allowNull: false,
