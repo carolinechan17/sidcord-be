@@ -28,7 +28,7 @@ module.exports = {
         type: Sequelize.STRING,
         allowNull: true,
       },
-      alamatIs: {
+      alamatId: {
         type: Sequelize.INTEGER,
         allowNull: true,
       },

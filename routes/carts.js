@@ -126,7 +126,7 @@ router.get('/checkout/:id', async function (req, res) {
 //pada checkout, customer akan mengisi data namaPenerima, email, noTelp, alamat, namaKurir
 router.put('/checkout', async function (req, res) {
   try {
-    const { namaPenerima, email, noTelp, alamat, kurirId, id, customerUID } = req.body;
+    const { namaPenerima, email, noTelp, alamatId, kurirId, id, customerUID } = req.body;
     const cartItems = await model.cartItems.findAll({
       where: { cartId: id },
     });
@@ -146,7 +146,20 @@ router.put('/checkout', async function (req, res) {
       });
     });
 
-    const cart = await model.carts.update({ namaPenerima, email, noTelp, alamat, totalPrice, status: 1, namaKurir }, { where: { id: id } });
+    const address = await model.addresses.findOne({
+      where: { id: alamatId}
+    });
+    let alamat_details = []
+
+    address.forEach((alamat) => {
+      alamat_details.push({
+        city: alamat.city,
+        state: alamat.provinsi,
+        description: alamat.keterangan,
+      });
+    });
+
+    const cart = await model.orders.update({ namaPenerima, email, alamatId, totalPrice, totalOngkir, status: 1, kurirId }, { where: { id: id } });
 
     const arrName = namaPenerima.split(/\s/gi);
 
@@ -162,6 +175,8 @@ router.put('/checkout', async function (req, res) {
         email: email,
         phone: noTelp,
       },
+      alamat_details: alamat_details,
+      idKurir = `${kurirId}`,
       enabled_payments: ['bri_va', 'bca_va', 'bni_va', 'gopay'],
     };
     console.log(parameter);
