@@ -10,8 +10,17 @@ module.exports = {
       },
       customerUID: {
         type: Sequelize.STRING,
+        allowNull: true,
         references: {
           model: "customers",
+          key: "uid",
+        },
+      },
+      sellerUID: {
+        type: Sequelize.STRING,
+        allowNull: true,
+        references: {
+          model: "sellers",
           key: "uid",
         },
       },

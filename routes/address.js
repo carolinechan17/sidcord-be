@@ -1,16 +1,26 @@
 const express = require("express");
 const router = express.Router();
 const model = require("../models/index");
+const { Op } = require("sequelize");
 
 router.post("/", async (req, res) => {
-  const { customerUID, provinsi, city, keterangan, email, nama, notelp } =
-    req.body;
-  if (!customerUID || !provinsi || !city || !keterangan)
+  const {
+    customerUID = null,
+    sellerUID = null,
+    provinsi,
+    city,
+    keterangan,
+    email,
+    nama,
+    notelp,
+  } = req.body;
+  if (!provinsi || !city || !keterangan)
     return res.status(401).json({ message: "missing require data" });
 
   const addresses = await model.addresses
     .create({
       customerUID,
+      sellerUID,
       provinsi,
       city,
       keterangan,
@@ -39,11 +49,11 @@ router.post("/", async (req, res) => {
 });
 
 router.get("/", async (req, res) => {
-  const { customerUID } = req.query;
+  const { customerUID = null, sellerUID = null } = req.query;
   const address = await model.addresses
     .findAll({
       where: {
-        customerUID: customerUID,
+        [Op.or]: [{ customerUID: customerUID }, { sellerUID: sellerUID }],
       },
     })
     .catch((err) => {

@@ -1,11 +1,11 @@
 require("dotenv").config(); // this is important!
 const config = {
   development: {
-    username: process.env.DB_USERNAME || "root",
-    password: process.env.DB_PASSWORD || null,
-    database: process.env.DB_NAME || "sidcord",
-    host: process.env.DB_HOST || "127.0.0.1",
-    dialect: process.env.DB_DIALECT || "mysql",
+    username: process.env.DB_DEV_USERNAME || "root",
+    password: process.env.DB_DEV_PASSWORD || null,
+    database: process.env.DB_DEV_NAME || "sidcord",
+    host: process.env.DB_DEV_HOST || "127.0.0.1",
+    dialect: process.env.DB_DEV_DIALECT || "mysql",
   },
   production: {
     username: process.env.DB_USERNAME || "root",

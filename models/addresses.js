@@ -15,6 +15,7 @@ module.exports = (sequelize, DataTypes) => {
   addresses.init(
     {
       customerUID: DataTypes.STRING,
+      sellerUID: DataTypes.STRING,
       provinsi: DataTypes.STRING,
       city: DataTypes.STRING,
       keterangan: DataTypes.STRING,

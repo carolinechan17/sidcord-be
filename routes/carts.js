@@ -213,9 +213,10 @@ router.put("/checkout", async function (req, res) {
               id: kurirIds[cart.id].id,
             },
           })
-          .then((kurir) => {
-            const shippingCost = CalculateShippingCost(
+          .then(async (kurir) => {
+            const shippingCost = await CalculateShippingCost(
               kurir.basePrice,
+              cart.sellerUID,
               address
             );
 
