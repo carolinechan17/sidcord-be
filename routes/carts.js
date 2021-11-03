@@ -126,7 +126,7 @@ router.get("/checkout/:id", async function (req, res) {
       where: {
         customerUID: customerUID,
         status: {
-          [Op.gte]: 0,
+          [Op.gt]: 0,
         },
       },
       order: [["createdAt", "DESC"]],
