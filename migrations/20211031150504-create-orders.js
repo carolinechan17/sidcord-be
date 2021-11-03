@@ -10,7 +10,6 @@ module.exports = {
       },
       customerUID: {
         type: Sequelize.STRING,
-        unique: true,
         references: {
           model: "customers",
           key: "uid",
