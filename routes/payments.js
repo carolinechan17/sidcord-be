@@ -5,7 +5,7 @@ const model = require("../models/index");
 
 async function HandlePaymentComplate(PaymentData) {
   const arrOrderId = PaymentData.order_id.split("-");
-  return await model.carts
+  return await model.orders
     .update({ status: 2 }, { where: { id: arrOrderId[0] } })
     .then(() => true)
     .catch((err) => {
