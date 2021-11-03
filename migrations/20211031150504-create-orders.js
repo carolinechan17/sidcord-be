@@ -16,18 +16,6 @@ module.exports = {
           key: "uid",
         },
       },
-      namaPenerima: {
-        type: Sequelize.STRING,
-        allowNull: true,
-      },
-      email: {
-        type: Sequelize.STRING,
-        allowNull: true,
-      },
-      noTelp: {
-        type: Sequelize.STRING,
-        allowNull: true,
-      },
       alamatId: {
         type: Sequelize.INTEGER,
         allowNull: true,

@@ -1,6 +1,6 @@
-'use strict';
-const { database } = require('firebase-admin');
-const { Model } = require('sequelize');
+"use strict";
+const { database } = require("firebase-admin");
+const { Model } = require("sequelize");
 module.exports = (sequelize, DataTypes) => {
   class addresses extends Model {
     /**
@@ -18,10 +18,13 @@ module.exports = (sequelize, DataTypes) => {
       provinsi: DataTypes.STRING,
       city: DataTypes.STRING,
       keterangan: DataTypes.STRING,
+      nama: DataTypes.STRING,
+      email: DataTypes.STRING,
+      notelp: DataTypes.STRING,
     },
     {
       sequelize,
-      modelName: 'addresses',
+      modelName: "addresses",
     }
   );
   return addresses;

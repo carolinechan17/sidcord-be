@@ -1,17 +1,19 @@
-var createError = require("http-errors");
-var express = require("express");
-var path = require("path");
-var cookieParser = require("cookie-parser");
-var logger = require("morgan");
+const createError = require("http-errors");
+const express = require("express");
+const path = require("path");
+const cookieParser = require("cookie-parser");
+const logger = require("morgan");
 
-var indexRouter = require("./routes/index");
-var customersRouter = require("./routes/customers");
-var sellersRouter = require("./routes/sellers");
-var productsRouter = require("./routes/products");
-var cartsRouter = require("./routes/carts");
-var paymentRouter = require("./routes/payments");
+const indexRouter = require("./routes/index");
+const customersRouter = require("./routes/customers");
+const sellersRouter = require("./routes/sellers");
+const productsRouter = require("./routes/products");
+const cartsRouter = require("./routes/carts");
+const paymentRouter = require("./routes/payments");
+const addressRouter = require("./routes/address");
+const couriersRouter = require("./routes/couriers");
 const cors = require("cors");
-var app = express();
+const app = express();
 
 // view engine setup
 app.set("views", path.join(__dirname, "views"));
@@ -29,6 +31,8 @@ app.use("/sellers", sellersRouter);
 app.use("/products", productsRouter);
 app.use("/carts", cartsRouter);
 app.use("/payments", paymentRouter);
+app.use("/address", addressRouter);
+app.use("/couriers", couriersRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {

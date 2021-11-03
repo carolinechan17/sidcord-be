@@ -4,6 +4,7 @@ const model = require("../models/index");
 const { Op } = require("sequelize");
 const snap = require("../Midtrans");
 const IsAuth = require("../middleware/IsAuth");
+const CalculateShippingCost = require("../utils/CalculateShippingCost");
 
 //add to cart with customerUID
 router.post("/", async function (req, res) {
@@ -121,7 +122,7 @@ router.get("/:id", async function (req, res) {
 router.get("/checkout/:id", async function (req, res) {
   try {
     const customerUID = req.params.id;
-    const carts = await model.carts.findAll({
+    const orders = await model.orders.findAll({
       where: {
         customerUID: customerUID,
         status: {
@@ -129,10 +130,29 @@ router.get("/checkout/:id", async function (req, res) {
         },
       },
       order: [["createdAt", "DESC"]],
-      include: "cartItems",
+      include: [
+        {
+          model: model.carts,
+          as: "carts",
+          include: [
+            {
+              model: model.cartItems,
+              as: "cartItems",
+            },
+            {
+              model: model.sellers,
+              as: "seller",
+            },
+            {
+              model: model.couriers,
+              as: "kurir",
+            },
+          ],
+        },
+      ],
     });
     return res.json({
-      data: carts,
+      data: orders,
     });
   } catch (err) {
     console.log(err);
@@ -144,76 +164,118 @@ router.get("/checkout/:id", async function (req, res) {
 //pada checkout, customer akan mengisi data namaPenerima, email, noTelp, alamat, namaKurir
 router.put("/checkout", async function (req, res) {
   try {
-    const { namaPenerima, email, noTelp, alamatId, kurirId, id, customerUID } =
-      req.body;
-    const cartItems = await model.cartItems.findAll({
-      where: { cartId: id },
-    });
-    let totalPrice = 0;
-    let item_details = [];
-
-    cartItems.forEach((item) => {
-      totalPrice += item.price * item.quantity;
-      item_details.push({
-        id: item.slug,
-        price: item.price,
-        quantity: item.quantity,
-        name: item.name,
-        brand: "",
-        category: "Compe",
-        merchant_name: "",
-      });
+    const { alamatId, kurirIds, customerUID } = req.body;
+    const orders = await model.orders.findOne({
+      where: { customerUID: customerUID, status: 0 },
+      include: [
+        {
+          model: model.carts,
+          as: "carts",
+          include: [
+            {
+              model: model.cartItems,
+              as: "cartItems",
+            },
+            {
+              model: model.sellers,
+              as: "seller",
+            },
+          ],
+        },
+      ],
     });
 
     const address = await model.addresses.findOne({
       where: { id: alamatId },
     });
-    let alamat_details = [];
 
-    address.forEach((alamat) => {
-      alamat_details.push({
-        city: alamat.city,
-        state: alamat.provinsi,
-        description: alamat.keterangan,
-      });
+    const arrName = address.nama.split(/\s/gi);
+
+    const formatedAddress = {
+      first_name: arrName[0],
+      last_name: arrName[arrName.length - 1] ?? "-",
+      email: address.email,
+      phone: address.notelp,
+      address: address.keterangan,
+      city: address.city,
+    };
+
+    let totalPrice = 0;
+    let totalQuantity = 0;
+    let item_details = [];
+    let promises = [];
+
+    orders.carts.forEach(async (cart) => {
+      promises.push(
+        model.couriers
+          .findOne({
+            where: {
+              id: kurirIds[cart.id].id,
+            },
+          })
+          .then((kurir) => {
+            const shippingCost = CalculateShippingCost(
+              kurir.basePrice,
+              address
+            );
+
+            item_details.push({
+              id: `Kurir-${kurir.id}`,
+              price: shippingCost,
+              quantity: 1,
+              name: kurir.nama,
+            });
+
+            totalPrice += shippingCost;
+
+            cart.cartItems.forEach(async (item) => {
+              totalQuantity += item.quantity;
+              totalPrice += item.price * item.quantity;
+              item_details.push({
+                id: `Product-${item.id}`,
+                price: item.price,
+                quantity: item.quantity,
+                name: item.name,
+                merchant_name: cart.seller.name,
+              });
+            });
+
+            return cart.update({
+              kurirId: kurir.id,
+              ongkir: shippingCost,
+            });
+          })
+      );
     });
 
-    const cart = await model.orders.update(
-      {
-        namaPenerima,
-        email,
-        alamatId,
-        totalPrice,
-        totalOngkir,
-        status: 1,
-        kurirId,
-      },
-      { where: { id: id } }
-    );
+    await Promise.all(promises);
 
-    const arrName = namaPenerima.split(/\s/gi);
+    await model.orders.update(
+      {
+        alamatId: address.id,
+        totalPrice,
+        totalQuantity,
+        status: 1,
+      },
+      { where: { customerUID: customerUID, status: 0 } }
+    );
 
     const parameter = {
       transaction_details: {
-        order_id: `${id}-${customerUID}`,
+        order_id: `${orders.id}-${customerUID}`,
         gross_amount: totalPrice,
       },
       item_details: item_details,
       customer_details: {
         first_name: arrName[0],
         last_name: arrName.length > 1 ? arrName[arrName.length - 1] : "",
-        email: email,
-        phone: noTelp,
+        shipping_address: formatedAddress,
       },
-      alamat_details: alamat_details,
-      idKurir: `${kurirId}`,
       enabled_payments: ["bri_va", "bca_va", "bni_va", "gopay"],
     };
-    console.log(parameter);
     const snapLink = await snap.createTransaction(parameter);
-    return res.send({
+    return res.json({
       data: {
-        cart,
         redirectUrl: snapLink.redirect_url,
       },
     });
