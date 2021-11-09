@@ -1,18 +1,19 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const model = require("../models/index");
-const { Op } = require("sequelize");
-const snap = require("../Midtrans");
-const IsAuth = require("../middleware/IsAuth");
-const CalculateShippingCost = require("../utils/CalculateShippingCost");
+const model = require('../models/index');
+const { Op } = require('sequelize');
+const snap = require('../Midtrans');
+const IsAuth = require('../middleware/IsAuth');
+const CalculateShippingCost = require('../utils/CalculateShippingCost');
+var RajaOngkir = require('rajaongkir-nodejs').Starter('40714cc6e20d56f0f752a24a3ab06a35');
 
 //add to cart with customerUID
-router.post("/", async function (req, res) {
+router.post('/', async function (req, res) {
   try {
     const { customerUID, productId } = req.body;
 
     if (!productId || !customerUID) {
-      return res.status(401).json({ message: "missing require data" });
+      return res.status(401).json({ message: 'missing require data' });
     }
     const Product = await model.products.findOne({ where: { id: productId } });
     const sellerUID = Product.sellerUID;
@@ -61,7 +62,7 @@ router.post("/", async function (req, res) {
         quantity: 1,
       });
     } else {
-      cartItem.increment("quantity", {
+      cartItem.increment('quantity', {
         by: 1,
       });
     }
@@ -71,7 +72,7 @@ router.post("/", async function (req, res) {
       totalPrice: Product.price,
     });
 
-    await Product.increment("stock", {
+    await Product.increment('stock', {
       by: -1,
     });
 
@@ -87,7 +88,7 @@ router.post("/", async function (req, res) {
 });
 
 //return all cartItem by cartId
-router.get("/:id", async function (req, res) {
+router.get('/:id', async function (req, res) {
   try {
     const customerUID = req.params.id;
     const orders = await model.orders.findOne({
@@ -95,15 +96,15 @@ router.get("/:id", async function (req, res) {
       include: [
         {
           model: model.carts,
-          as: "carts",
+          as: 'carts',
           include: [
             {
               model: model.cartItems,
-              as: "cartItems",
+              as: 'cartItems',
             },
             {
               model: model.sellers,
-              as: "seller",
+              as: 'seller',
             },
           ],
         },
@@ -119,7 +120,7 @@ router.get("/:id", async function (req, res) {
 });
 
 //return all cartItem by cartId
-router.get("/checkout/:id", async function (req, res) {
+router.get('/checkout/:id', async function (req, res) {
   try {
     const customerUID = req.params.id;
     const orders = await model.orders.findAll({
@@ -129,23 +130,23 @@ router.get("/checkout/:id", async function (req, res) {
           [Op.gt]: 0,
         },
       },
-      order: [["createdAt", "DESC"]],
+      order: [['createdAt', 'DESC']],
       include: [
         {
           model: model.carts,
-          as: "carts",
+          as: 'carts',
           include: [
             {
               model: model.cartItems,
-              as: "cartItems",
+              as: 'cartItems',
             },
             {
               model: model.sellers,
-              as: "seller",
+              as: 'seller',
             },
             {
               model: model.couriers,
-              as: "kurir",
+              as: 'kurir',
             },
           ],
         },
@@ -162,7 +163,7 @@ router.get("/checkout/:id", async function (req, res) {
 
 //checkout by cartId
 //pada checkout, customer akan mengisi data namaPenerima, email, noTelp, alamat, namaKurir
-router.put("/checkout", async function (req, res) {
+router.put('/checkout', async function (req, res) {
   try {
     const { alamatId, kurirIds, customerUID } = req.body;
     const orders = await model.orders.findOne({
@@ -170,15 +171,15 @@ router.put("/checkout", async function (req, res) {
       include: [
         {
           model: model.carts,
-          as: "carts",
+          as: 'carts',
           include: [
             {
               model: model.cartItems,
-              as: "cartItems",
+              as: 'cartItems',
             },
             {
               model: model.sellers,
-              as: "seller",
+              as: 'seller',
             },
           ],
         },
@@ -193,7 +194,7 @@ router.put("/checkout", async function (req, res) {
 
     const formatedAddress = {
       first_name: arrName[0],
-      last_name: arrName[arrName.length - 1] ?? "-",
+      last_name: arrName[arrName.length - 1] ?? '-',
       email: address.email,
       phone: address.notelp,
       address: address.keterangan,
@@ -214,11 +215,7 @@ router.put("/checkout", async function (req, res) {
             },
           })
           .then(async (kurir) => {
-            const shippingCost = await CalculateShippingCost(
-              kurir.basePrice,
-              cart.sellerUID,
-              address
-            );
+            const shippingCost = await CalculateShippingCost(kurir.basePrice, cart.sellerUID, address);
 
             item_details.push({
               id: `Kurir-${kurir.id}`,
@@ -269,10 +266,10 @@ router.put("/checkout", async function (req, res) {
       item_details: item_details,
       customer_details: {
         first_name: arrName[0],
-        last_name: arrName.length > 1 ? arrName[arrName.length - 1] : "",
+        last_name: arrName.length > 1 ? arrName[arrName.length - 1] : '',
         shipping_address: formatedAddress,
       },
-      enabled_payments: ["bri_va", "bca_va", "bni_va", "gopay"],
+      enabled_payments: ['bri_va', 'bca_va', 'bni_va', 'gopay'],
     };
     const snapLink = await snap.createTransaction(parameter);
     return res.json({
@@ -283,6 +280,45 @@ router.put("/checkout", async function (req, res) {
   } catch (err) {
     console.log(err);
     res.status(400).json(err);
+  }
+});
+
+//check ongkir
+router.post('/', function (req, res, next) {
+  const kurir = req.params.kurir;
+  const params = {
+    origin: req.params.asal,
+    destination: req.params.tujuan,
+    weight: 1000,
+  };
+
+  if (kurir === 'JNE') {
+    RajaOngkir.getJNECost(params)
+      .then(function (result) {
+        return results;
+      })
+      .catch(function (err) {
+        console.log(err);
+        res.status(400).json(err);
+      });
+  } else if (kurir === 'POS') {
+    RajaOngkir.getPOSCost(params)
+      .then(function (result) {
+        return results;
+      })
+      .catch(function (err) {
+        console.log(err);
+        res.status(400).json(err);
+      });
+  } else if (kurir === 'TIKI') {
+    RajaOngkir.getTIKICost(params)
+      .then(function (result) {
+        return results;
+      })
+      .catch(function (err) {
+        console.log(err);
+        res.status(400).json(err);
+      });
   }
 });
 
