@@ -284,18 +284,41 @@ router.put('/checkout', async function (req, res) {
 });
 
 //check ongkir
-router.post('/', function (req, res, next) {
-  const kurir = req.params.kurir;
+router.get('/', async function (req, res, next) {
+  const kurir = req.body.kurir;
+  const { provAsal, provTujuan, kotaAsal, kotaTujuan } = req.body;
+  var idProvAsal, idProvTujuan, idKotaAsal, idKotaTujuan;
+
+  //mencari id provinsi
+  await RajaOngkir.getProvinces().then(function (result) {
+    const prov = result.rajaongkir.results;
+    const pAsal = prov.find((pAsal) => pAsal.province === provAsal);
+    const pTujuan = prov.find((pTujuan) => pTujuan.province === provTujuan);
+    idProvAsal = pAsal.province_id;
+    idProvTujuan = pTujuan.province_id;
+  });
+
+  //mencari id city
+  await RajaOngkir.getCities().then(function (result) {
+    const city = result.rajaongkir.results;
+    const kAsal = city.find((kAsal) => kAsal.province_id === idProvAsal && kAsal.city_name === kotaAsal);
+    const kTujuan = city.find((kTujuan) => kTujuan.province_id === idProvTujuan && kTujuan.city_name === kotaTujuan);
+    idKotaAsal = kAsal.city_id;
+    idKotaTujuan = kTujuan.city_id;
+  });
+
   const params = {
-    origin: req.params.asal,
-    destination: req.params.tujuan,
+    origin: idKotaAsal,
+    destination: idKotaTujuan,
     weight: 1000,
   };
 
   if (kurir === 'JNE') {
     RajaOngkir.getJNECost(params)
       .then(function (result) {
-        return results;
+        return res.json({
+          data: result,
+        });
       })
       .catch(function (err) {
         console.log(err);
@@ -304,7 +327,9 @@ router.post('/', function (req, res, next) {
   } else if (kurir === 'POS') {
     RajaOngkir.getPOSCost(params)
       .then(function (result) {
-        return results;
+        return res.json({
+          data: result,
+        });
       })
       .catch(function (err) {
         console.log(err);
@@ -313,7 +338,9 @@ router.post('/', function (req, res, next) {
   } else if (kurir === 'TIKI') {
     RajaOngkir.getTIKICost(params)
       .then(function (result) {
-        return results;
+        return res.json({
+          data: result,
+        });
       })
       .catch(function (err) {
         console.log(err);
