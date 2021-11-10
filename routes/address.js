@@ -2,6 +2,9 @@ const express = require("express");
 const router = express.Router();
 const model = require("../models/index");
 const { Op } = require("sequelize");
+const RajaOngkir = require("rajaongkir-nodejs").Starter(
+  "40714cc6e20d56f0f752a24a3ab06a35"
+);
 
 router.post("/", async (req, res) => {
   const {
@@ -17,6 +20,16 @@ router.post("/", async (req, res) => {
   if (!provinsi || !city || !keterangan)
     return res.status(401).json({ message: "missing require data" });
 
+  const cityData = await RajaOngkir.getCity(city).then(
+    (result) => result.rajaongkir.results
+  );
+
+  const ProvinsiData = await RajaOngkir.getProvince(provinsi).then(
+    (result) => result.rajaongkir.results
+  );
+
+  const recap = `${keterangan}, ${cityData.city_name}, ${ProvinsiData.province}`;
+
   const addresses = await model.addresses
     .create({
       customerUID,
@@ -27,6 +40,7 @@ router.post("/", async (req, res) => {
       email,
       nama,
       notelp,
+      recap,
     })
     .catch((err) => {
       console.log(err);
@@ -48,12 +62,12 @@ router.post("/", async (req, res) => {
   });
 });
 
-router.get("/", async (req, res) => {
-  const { customerUID = null, sellerUID = null } = req.query;
+router.get("/:id", async (req, res) => {
+  const addressId = req.params.id;
   const address = await model.addresses
-    .findAll({
+    .findOne({
       where: {
-        [Op.or]: [{ customerUID: customerUID }, { sellerUID: sellerUID }],
+        id: addressId,
       },
     })
     .catch((err) => {
@@ -65,12 +79,16 @@ router.get("/", async (req, res) => {
   });
 });
 
-router.get("/:id", async (req, res) => {
-  const addressId = req.params.id;
+router.get("/", async (req, res) => {
+  const { customerUID = null, sellerUID = null } = req.query;
+  console.log(customerUID);
+  let params = [];
+  if (customerUID) params.push({ customerUID: customerUID });
+  if (sellerUID) params.push({ sellerUID: sellerUID });
   const address = await model.addresses
-    .findOne({
+    .findAll({
       where: {
-        id: addressId,
+        [Op.or]: params,
       },
     })
     .catch((err) => {

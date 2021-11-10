@@ -4,6 +4,10 @@ const model = require("../models/index");
 const RajaOngkir = require("rajaongkir-nodejs").Starter(
   "40714cc6e20d56f0f752a24a3ab06a35"
 );
+const request = require("request");
+const Promise = require("promise");
+const CalculateShippingCost = require("../utils/CalculateShippingCost");
+
 router.post("/", async (req, res) => {
   const { nama, basePrice } = req.body;
   if (!nama || !basePrice)
@@ -35,37 +39,31 @@ router.post("/", async (req, res) => {
 });
 
 router.get("/", async (req, res) => {
-  const couriers = await model.couriers.findAll();
   return res.json({
-    data: couriers,
+    data: [
+      {
+        id: "JNE",
+        nama: "JNE",
+      },
+      {
+        id: "TIKI",
+        nama: "TIKI",
+      },
+      {
+        id: "POS",
+        nama: "POS",
+      },
+    ],
   });
 });
 
 //check ongkir
-router.post("/ongkir", function (req, res) {
+router.post("/ongkir", async (req, res) => {
   const { kurir, asal, tujuan } = req.body;
-  const params = {
-    origin: asal,
-    destination: tujuan,
-    weight: 1000,
-  };
 
-  let query = RajaOngkir;
-
-  switch (kurir) {
-    case "POS":
-      query = query.getPOSCost(params);
-    case "TIKI":
-      query = query.getTIKICost(params);
-    default:
-      //JNE
-      query = query.getJNECost(params);
-      break;
-  }
-
-  return query
+  return CalculateShippingCost(asal, tujuan, kurir)
     .then((result) => {
-      return res.json(result);
+      return res.json(result.rajaongkir.results[0].costs[0].cost);
     })
     .catch((err) => {
       console.log(err);
@@ -75,12 +73,10 @@ router.post("/ongkir", function (req, res) {
 
 router.get("/provinsi/:provinsiId", async (req, res) => {
   const { provinsiId = null } = req.params;
-  let query = RajaOngkir;
 
-  if (provinsiId) query = query.getProvince(provinsiId);
-  else query = query.getProvinces();
+  if (!provinsiId) return res.sendStatus(401);
 
-  return query
+  return RajaOngkir.getProvince(provinsiId)
     .then((result) => {
       return res.json(result);
     })
@@ -90,13 +86,46 @@ router.get("/provinsi/:provinsiId", async (req, res) => {
     });
 });
 
+router.get("/provinsi/", async (req, res) => {
+  return RajaOngkir.getProvinces()
+    .then((result) => {
+      return res.json(result.rajaongkir.results);
+    })
+    .catch((err) => {
+      console.log(err);
+      return res.status(400).json(err);
+    });
+});
+
 router.get("/kota/:id", async (req, res) => {
   const idKota = req.params.id;
-  if (idKota) return res.status(401).json({ message: "missing id kota" });
+  if (!idKota) return res.status(401).json({ message: "missing id kota" });
 
-  return RajaOngkir.getCity(idKota)
+  const getCityByProvince = function (id) {
+    const uri = "https://api.rajaongkir.com/starter/city?province=" + id;
+    const apiKey = "40714cc6e20d56f0f752a24a3ab06a35";
+    return new Promise(function (resolve, reject) {
+      request(
+        {
+          uri: uri,
+          method: "GET",
+          headers: {
+            key: apiKey,
+          },
+        },
+        function (error, response, body) {
+          console.log(body);
+          var result = JSON.parse(body);
+          if (result.rajaongkir.status.code !== 200) reject(result);
+          resolve(result);
+        }
+      );
+    });
+  };
+
+  return getCityByProvince(idKota)
     .then((result) => {
-      return res.json(result);
+      return res.json(result.rajaongkir.results);
     })
     .catch((err) => {
       console.log(err);

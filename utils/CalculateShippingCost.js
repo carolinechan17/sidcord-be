@@ -1,32 +1,30 @@
-const model = require("../models/index");
+const RajaOngkir = require("rajaongkir-nodejs").Starter(
+  "40714cc6e20d56f0f752a24a3ab06a35"
+);
 
-async function CalculateShippingCost(basePrice, sellerId, address) {
-  let totalASCIIProvinsi = 0;
-  let totalASCIIKota = 0;
-  const sellerAddres = await model.addresses.findOne({
-    where: {
-      sellerUID: sellerId,
-    },
-  });
-  const provinsiTujuan = address.provinsi;
-  const kotaTujuan = address.city;
-  for (let i = 0; i < provinsiTujuan.length; i++) {
-    totalASCIIProvinsi += provinsiTujuan.charCodeAt(i);
-  }
-  for (let i = 0; i < kotaTujuan.length; i++) {
-    totalASCIIKota += kotaTujuan.charCodeAt(i);
-  }
-  const provinsiSeller = sellerAddres.provinsi;
-  const kotaSeller = sellerAddres.city;
-  for (let i = 0; i < provinsiSeller.length; i++) {
-    totalASCIIProvinsi -= provinsiSeller.charCodeAt(i);
-  }
-  for (let i = 0; i < kotaSeller.length; i++) {
-    totalASCIIKota -= kotaSeller.charCodeAt(i);
-  }
-  const tambahan = Math.abs(totalASCIIKota + totalASCIIProvinsi) / 100 || 1.2;
+async function CalculateShippingCost(asal, tujuan, kurir) {
+  const params = {
+    origin: asal,
+    destination: tujuan,
+    weight: 1000,
+  };
 
-  return basePrice * tambahan;
+  let query = RajaOngkir;
+
+  switch (kurir) {
+    case "POS":
+      query = query.getPOSCost(params);
+      break;
+    case "TIKI":
+      query = query.getTIKICost(params);
+      break;
+    default:
+      //JNE
+      query = query.getJNECost(params);
+      break;
+  }
+
+  return query;
 }
 
 module.exports = CalculateShippingCost;
