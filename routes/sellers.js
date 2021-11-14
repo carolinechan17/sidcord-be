@@ -1,12 +1,12 @@
-const express = require("express");
-const IsAuth = require("../middleware/IsAuth");
-const IsSeller = require("../middleware/IsSeller");
+const express = require('express');
+const IsAuth = require('../middleware/IsAuth');
+const IsSeller = require('../middleware/IsSeller');
 const router = express.Router();
-const model = require("../models/index");
-const admin = require("../admin");
+const model = require('../models/index');
+const admin = require('../admin');
 
 //create new seller
-router.post("/", IsAuth, async function (req, res, next) {
+router.post('/', IsAuth, async function (req, res, next) {
   const { name, email, phone, uid, photoURL } = req.body;
 
   const seller = await model.sellers.create({
@@ -21,10 +21,10 @@ router.post("/", IsAuth, async function (req, res, next) {
     .auth()
     .setCustomUserClaims(uid, { seller: true })
     .then(() => {
-      console.log("SUCCESS");
+      console.log('SUCCESS');
       res.send({
         code: 200,
-        status: "STATUS",
+        status: 'STATUS',
         data: {
           seller,
         },
@@ -34,13 +34,13 @@ router.post("/", IsAuth, async function (req, res, next) {
       console.log(err);
       return res.send({
         code: 400,
-        status: "BAD_REQUEST",
+        status: 'BAD_REQUEST',
         message: err.message,
       });
     });
 });
 
-router.get("/get/products", IsSeller, async function (req, res, next) {
+router.get('/get/products', IsSeller, async function (req, res, next) {
   try {
     const { uid } = req.body;
     const product = await model.products.findAll({
@@ -48,7 +48,7 @@ router.get("/get/products", IsSeller, async function (req, res, next) {
     });
     return res.send({
       code: 200,
-      status: "SUCCESS",
+      status: 'SUCCESS',
       data: {
         product,
       },
@@ -57,23 +57,23 @@ router.get("/get/products", IsSeller, async function (req, res, next) {
     console.log(err);
     return res.status(400).send({
       code: 400,
-      status: "BAD_REQUEST",
+      status: 'BAD_REQUEST',
       message: err.message,
     });
   }
 });
 
 //return seller data with id
-router.get("/:uid", async function (req, res, next) {
+router.get('/:uid', async function (req, res, next) {
   try {
     const uid = req.params.uid;
     const seller = await model.sellers.findOne({
       where: { uid: uid },
-      include: "products",
+      include: 'products',
     });
     return res.send({
       code: 200,
-      status: "SUCCESS",
+      status: 'SUCCESS',
       data: {
         seller,
       },
@@ -81,24 +81,21 @@ router.get("/:uid", async function (req, res, next) {
   } catch (err) {
     return res.send({
       code: 400,
-      status: "BAD_REQUEST",
+      status: 'BAD_REQUEST',
       message: err.message,
     });
   }
 });
 
 //update profile seller
-router.put("/:id", async function (req, res, next) {
+router.put('/:id', async function (req, res, next) {
   try {
     const id = req.params.id;
     const { name, email, password, phone } = req.body;
-    const seller = await model.sellers.update(
-      { name, email, password, phone },
-      { where: { id: id } }
-    );
+    const seller = await model.sellers.update({ name, email, password, phone }, { where: { id: id } });
     return res.send({
       code: 200,
-      status: "SUCCESS",
+      status: 'SUCCESS',
       data: {
         seller,
       },
@@ -106,20 +103,20 @@ router.put("/:id", async function (req, res, next) {
   } catch (err) {
     return res.send({
       code: 400,
-      status: "BAD_REQUEST",
+      status: 'BAD_REQUEST',
       message: err.message,
     });
   }
 });
 
 //delete account seller
-router.delete("/:id", async function (req, res, next) {
+router.delete('/:id', async function (req, res, next) {
   try {
     const id = req.params.id;
     const seller = await model.sellers.destroy({ where: { id: id } });
     return res.send({
       code: 200,
-      status: "SUCCESS",
+      status: 'SUCCESS',
       data: {
         seller,
       },
@@ -127,10 +124,24 @@ router.delete("/:id", async function (req, res, next) {
   } catch (err) {
     return res.send({
       code: 400,
-      status: "BAD_REQUEST",
+      status: 'BAD_REQUEST',
       message: err.message,
     });
   }
+});
+
+//show all cartItems that belongs to seller with sellerUID
+router.get('/:uid', IsSeller, async function (req, res, next) {
+  try {
+    const sellerUID = req.params.uid;
+    const cartItems = await model.cartItems.findAll({ where: { sellerUID: sellerUID } });
+  } catch (err) {}
+});
+//update status pesanan berdasarkan orderId
+router.get('/:id', IsSeller, async function (req, res, next) {
+  try {
+    const orderId = req.params.id;
+  } catch (err) {}
 });
 
 module.exports = router;
