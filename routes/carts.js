@@ -1,21 +1,19 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const model = require("../models/index");
-const { Op } = require("sequelize");
-const snap = require("../Midtrans");
-const IsAuth = require("../middleware/IsAuth");
-const CalculateShippingCost = require("../utils/CalculateShippingCost");
-const RajaOngkir = require("rajaongkir-nodejs").Starter(
-  "40714cc6e20d56f0f752a24a3ab06a35"
-);
+const model = require('../models/index');
+const { Op } = require('sequelize');
+const snap = require('../Midtrans');
+const IsAuth = require('../middleware/IsAuth');
+const CalculateShippingCost = require('../utils/CalculateShippingCost');
+const RajaOngkir = require('rajaongkir-nodejs').Starter('40714cc6e20d56f0f752a24a3ab06a35');
 
 //add to cart with customerUID
-router.post("/", async function (req, res) {
+router.post('/', async function (req, res) {
   try {
     const { customerUID, productId } = req.body;
 
     if (!productId || !customerUID) {
-      return res.status(401).json({ message: "missing require data" });
+      return res.status(401).json({ message: 'missing require data' });
     }
     const Product = await model.products.findOne({ where: { id: productId } });
     const sellerUID = Product.sellerUID;
@@ -64,7 +62,7 @@ router.post("/", async function (req, res) {
         quantity: 1,
       });
     } else {
-      cartItem.increment("quantity", {
+      cartItem.increment('quantity', {
         by: 1,
       });
     }
@@ -74,7 +72,7 @@ router.post("/", async function (req, res) {
       totalPrice: Product.price,
     });
 
-    await Product.increment("stock", {
+    await Product.increment('stock', {
       by: -1,
     });
 
@@ -90,7 +88,7 @@ router.post("/", async function (req, res) {
 });
 
 //return all cartItem by cartId
-router.get("/:id", async function (req, res) {
+router.get('/:id', async function (req, res) {
   try {
     const customerUID = req.params.id;
     const orders = await model.orders.findOne({
@@ -98,19 +96,19 @@ router.get("/:id", async function (req, res) {
       include: [
         {
           model: model.carts,
-          as: "carts",
+          as: 'carts',
           include: [
             {
               model: model.cartItems,
-              as: "cartItems",
+              as: 'cartItems',
             },
             {
               model: model.sellers,
-              as: "seller",
+              as: 'seller',
               include: [
                 {
                   model: model.addresses,
-                  as: "address",
+                  as: 'address',
                 },
               ],
             },
@@ -128,7 +126,7 @@ router.get("/:id", async function (req, res) {
 });
 
 //return all cartItem by customerId
-router.get("/checkout/:id", async function (req, res) {
+router.get('/checkout/:id', async function (req, res) {
   try {
     const customerUID = req.params.id;
     const orders = await model.orders.findAll({
@@ -138,19 +136,19 @@ router.get("/checkout/:id", async function (req, res) {
           [Op.gt]: 0,
         },
       },
-      order: [["createdAt", "DESC"]],
+      order: [['createdAt', 'DESC']],
       include: [
         {
           model: model.carts,
-          as: "carts",
+          as: 'carts',
           include: [
             {
               model: model.cartItems,
-              as: "cartItems",
+              as: 'cartItems',
             },
             {
               model: model.sellers,
-              as: "seller",
+              as: 'seller',
             },
           ],
         },
@@ -166,7 +164,7 @@ router.get("/checkout/:id", async function (req, res) {
 });
 
 //checkout
-router.put("/checkout", async function (req, res) {
+router.put('/checkout', async function (req, res) {
   try {
     const { alamatId, kurirIds, customerUID } = req.body;
     const orders = await model.orders.findOne({
@@ -174,15 +172,15 @@ router.put("/checkout", async function (req, res) {
       include: [
         {
           model: model.carts,
-          as: "carts",
+          as: 'carts',
           include: [
             {
               model: model.cartItems,
-              as: "cartItems",
+              as: 'cartItems',
             },
             {
               model: model.sellers,
-              as: "seller",
+              as: 'seller',
             },
           ],
         },
@@ -196,7 +194,7 @@ router.put("/checkout", async function (req, res) {
     const addressRecap = address.recap.split(/,/g);
     const formatedAddress = {
       first_name: arrName[0],
-      last_name: arrName[arrName.length - 1] ?? "-",
+      last_name: arrName[arrName.length - 1] ?? '-',
       email: address.email,
       phone: address.notelp,
       address: address.keterangan,
@@ -219,15 +217,10 @@ router.put("/checkout", async function (req, res) {
             },
           })
           .then((sellerAddress) => {
-            return CalculateShippingCost(
-              sellerAddress.city,
-              address.city,
-              kurirId
-            );
+            return CalculateShippingCost(sellerAddress.city, address.city, kurirId);
           })
           .then((result) => {
-            const shippingCost =
-              result.rajaongkir.results[0].costs[0].cost[0].value;
+            const shippingCost = result.rajaongkir.results[0].costs[0].cost[0].value;
             console.log(shippingCost);
             item_details.push({
               id: `Kurir-${kurirId}`,
@@ -278,15 +271,32 @@ router.put("/checkout", async function (req, res) {
       item_details: item_details,
       customer_details: {
         first_name: arrName[0],
-        last_name: arrName.length > 1 ? arrName[arrName.length - 1] : "",
+        last_name: arrName.length > 1 ? arrName[arrName.length - 1] : '',
         shipping_address: formatedAddress,
       },
-      enabled_payments: ["bri_va", "bca_va", "bni_va"],
+      enabled_payments: ['bri_va', 'bca_va', 'bni_va'],
     };
     const snapLink = await snap.createTransaction(parameter);
     return res.json({
       data: {
         redirectUrl: snapLink.redirect_url,
+      },
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(400).json(err);
+  }
+});
+
+//hapus 1 item dari cart berdasarkan cartId
+router.delete('/:id', async function (req, res) {
+  try {
+    const cartId = res.params.id;
+    const slug = req.body;
+    const cartItems = await model.cartItems.destroy({ where: { cartId: cartId, slug: slug } });
+    return res.json({
+      data: {
+        cartitems,
       },
     });
   } catch (err) {
