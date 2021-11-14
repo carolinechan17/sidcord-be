@@ -107,6 +107,12 @@ router.get("/:id", async function (req, res) {
             {
               model: model.sellers,
               as: "seller",
+              include: [
+                {
+                  model: model.addresses,
+                  as: "address",
+                },
+              ],
             },
           ],
         },
@@ -145,10 +151,6 @@ router.get("/checkout/:id", async function (req, res) {
             {
               model: model.sellers,
               as: "seller",
-            },
-            {
-              model: model.couriers,
-              as: "kurir",
             },
           ],
         },
@@ -190,16 +192,15 @@ router.put("/checkout", async function (req, res) {
     const address = await model.addresses.findOne({
       where: { id: alamatId },
     });
-
     const arrName = address.nama.split(/\s/gi);
-
+    const addressRecap = address.recap.split(/,/g);
     const formatedAddress = {
       first_name: arrName[0],
       last_name: arrName[arrName.length - 1] ?? "-",
       email: address.email,
       phone: address.notelp,
       address: address.keterangan,
-      city: address.city,
+      city: addressRecap[1],
     };
 
     let totalPrice = 0;
@@ -208,25 +209,31 @@ router.put("/checkout", async function (req, res) {
     let promises = [];
 
     orders.carts.forEach(async (cart) => {
+      const kurirId = kurirIds[cart.id].id;
+      const sellerId = cart.seller.uid;
       promises.push(
-        model.couriers
+        model.addresses
           .findOne({
             where: {
-              id: kurirIds[cart.id].id,
+              sellerUID: sellerId,
             },
           })
-          .then(async (kurir) => {
-            const shippingCost = await CalculateShippingCost(
-              kurir.basePrice,
-              cart.sellerUID,
-              address
+          .then((sellerAddress) => {
+            return CalculateShippingCost(
+              sellerAddress.city,
+              address.city,
+              kurirId
             );
-
+          })
+          .then((result) => {
+            const shippingCost =
+              result.rajaongkir.results[0].costs[0].cost[0].value;
+            console.log(shippingCost);
             item_details.push({
-              id: `Kurir-${kurir.id}`,
+              id: `Kurir-${kurirId}`,
               price: shippingCost,
               quantity: 1,
-              name: kurir.nama,
+              name: kurirId,
             });
 
             totalPrice += shippingCost;
@@ -244,7 +251,7 @@ router.put("/checkout", async function (req, res) {
             });
 
             return cart.update({
-              kurirId: kurir.id,
+              kurirId: kurirId,
               ongkir: shippingCost,
             });
           })
@@ -274,7 +281,7 @@ router.put("/checkout", async function (req, res) {
         last_name: arrName.length > 1 ? arrName[arrName.length - 1] : "",
         shipping_address: formatedAddress,
       },
-      enabled_payments: ["bri_va", "bca_va", "bni_va", "gopay"],
+      enabled_payments: ["bri_va", "bca_va", "bni_va"],
     };
     const snapLink = await snap.createTransaction(parameter);
     return res.json({

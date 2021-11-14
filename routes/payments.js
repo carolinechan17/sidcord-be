@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const snap = require("../Midtrans");
 const model = require("../models/index");
+const { Op } = require("sequelize");
 
 async function HandlePaymentComplate(PaymentData) {
   const arrOrderId = PaymentData.order_id.split("-");
@@ -27,9 +28,25 @@ router.post("/webhook", async (req, res) => {
   switch (PaymentData.transaction_status) {
     case "settlement":
       IsSuccessUpdate = HandlePaymentComplate(PaymentData);
+      await model.payments.update(
+        {
+          status: PaymentData.transaction_status,
+          data: JSON.stringify(PaymentData),
+        },
+        {
+          where: {
+            name: PaymentData.order_id,
+          },
+        }
+      );
       break;
-
     default:
+      await model.payments.create({
+        name: PaymentData.order_id,
+        amount: parseInt(PaymentData.gross_amount),
+        status: PaymentData.transaction_status,
+        data: JSON.stringify(PaymentData),
+      });
       IsSuccessUpdate = true;
       break;
   }
@@ -39,5 +56,18 @@ router.post("/webhook", async (req, res) => {
   }
 
   return res.status(500).json({ message: "error" });
+});
+
+router.get("/:id", async (req, res) => {
+  const orderId = req.params.id;
+  return model.payments
+    .findOne({
+      where: {
+        name: orderId,
+      },
+    })
+    .then((result) => {
+      return res.json(result);
+    });
 });
 module.exports = router;

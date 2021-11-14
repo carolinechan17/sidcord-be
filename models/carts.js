@@ -24,20 +24,13 @@ module.exports = (sequelize, DataTypes) => {
         targetKey: "uid",
         as: "seller",
       });
-      carts.belongsTo(models.couriers, {
-        foreignKey: {
-          name: "kurirId",
-          type: DataTypes.UUID,
-        },
-        as: "kurir",
-      });
     }
   }
   carts.init(
     {
       orderId: DataTypes.INTEGER,
       ongkir: DataTypes.INTEGER,
-      kurirId: DataTypes.INTEGER,
+      kurirId: DataTypes.STRING,
       sellerUID: DataTypes.STRING,
     },
     {

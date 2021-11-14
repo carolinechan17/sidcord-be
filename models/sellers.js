@@ -24,6 +24,14 @@ module.exports = (sequelize, DataTypes) => {
         sourceKey: "uid",
         as: "carts",
       });
+      sellers.hasOne(models.addresses, {
+        foreignKey: {
+          name: "sellerUID",
+          type: DataTypes.UUID,
+        },
+        sourceKey: "uid",
+        as: "address",
+      });
     }
   }
   sellers.init(
