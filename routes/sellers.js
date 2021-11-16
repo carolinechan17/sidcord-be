@@ -131,17 +131,39 @@ router.delete('/:id', async function (req, res, next) {
 });
 
 //show all cartItems that belongs to seller with sellerUID
-router.get('/:uid', IsSeller, async function (req, res, next) {
+router.get('/cartItems/:uid', async function (req, res, next) {
   try {
     const sellerUID = req.params.uid;
-    const cartItems = await model.cartItems.findAll({ where: { sellerUID: sellerUID } });
-  } catch (err) {}
+    const carts = await model.carts.findAll({ include: [cartItems] }, { where: { sellerUID: sellerUID } });
+    return res.send({
+      code: 200,
+      status: 'SUCCESS',
+      data: {
+        carts,
+      },
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(400).json(err);
+  }
 });
-//update status pesanan berdasarkan orderId
+
+//update status pesanan berdasarkan cartId
 router.get('/:id', IsSeller, async function (req, res, next) {
   try {
-    const orderId = req.params.id;
-  } catch (err) {}
+    const cartId = req.params.id;
+    const carts = await model.carts.update({ status: 2 }, { where: { cartId: cartId } });
+    return res.send({
+      code: 200,
+      status: 'SUCCESS',
+      data: {
+        carts,
+      },
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(400).json(err);
+  }
 });
 
 module.exports = router;
