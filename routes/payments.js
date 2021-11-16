@@ -4,10 +4,16 @@ const snap = require("../Midtrans");
 const model = require("../models/index");
 const { Op } = require("sequelize");
 
-async function HandlePaymentComplate(PaymentData) {
+async function HandlePaymentChangeStatus(PaymentData, status = 2) {
   const arrOrderId = PaymentData.order_id.split("-");
   return await model.orders
-    .update({ status: 2 }, { where: { id: arrOrderId[0] } })
+    .update({ status: status }, { where: { id: arrOrderId[0] } })
+    .then(() => {
+      return model.carts.update(
+        { status },
+        { where: { orderId: arrOrderId[0] } }
+      );
+    })
     .then(() => true)
     .catch((err) => {
       console.log(err);
@@ -27,7 +33,21 @@ router.post("/webhook", async (req, res) => {
 
   switch (PaymentData.transaction_status) {
     case "settlement":
-      IsSuccessUpdate = HandlePaymentComplate(PaymentData);
+      IsSuccessUpdate = HandlePaymentChangeStatus(PaymentData);
+      await model.payments.update(
+        {
+          status: PaymentData.transaction_status,
+          data: JSON.stringify(PaymentData),
+        },
+        {
+          where: {
+            name: PaymentData.order_id,
+          },
+        }
+      );
+      break;
+    case "expire":
+      IsSuccessUpdate = HandlePaymentChangeStatus(PaymentData, 6);
       await model.payments.update(
         {
           status: PaymentData.transaction_status,
