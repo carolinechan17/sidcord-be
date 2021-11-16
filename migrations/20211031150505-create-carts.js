@@ -1,10 +1,10 @@
-'use strict';
+"use strict";
 
-const { sequelize } = require('../models');
+const { sequelize } = require("../models");
 
 module.exports = {
   up: async (queryInterface, Sequelize) => {
-    await queryInterface.createTable('carts', {
+    await queryInterface.createTable("carts", {
       id: {
         allowNull: false,
         primaryKey: true,
@@ -14,8 +14,8 @@ module.exports = {
       orderId: {
         type: Sequelize.INTEGER,
         references: {
-          model: 'orders',
-          key: 'id',
+          model: "orders",
+          key: "id",
         },
       },
       ongkir: {
@@ -29,12 +29,13 @@ module.exports = {
       sellerUID: {
         type: Sequelize.STRING,
         references: {
-          model: 'sellers',
-          key: 'uid',
+          model: "sellers",
+          key: "uid",
         },
       },
       status: {
         type: Sequelize.INTEGER,
+        default: 0,
       },
       createdAt: {
         allowNull: false,
@@ -47,6 +48,6 @@ module.exports = {
     });
   },
   down: async (queryInterface, Sequelize) => {
-    await queryInterface.dropTable('carts');
+    await queryInterface.dropTable("carts");
   },
 };

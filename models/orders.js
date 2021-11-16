@@ -17,6 +17,13 @@ module.exports = (sequelize, DataTypes) => {
         sourceKey: "id",
         as: "carts",
       });
+      orders.belongsTo(models.addresses, {
+        foreignKey: {
+          name: "alamatId",
+        },
+        targetKey: "id",
+        as: "alamat",
+      });
     }
   }
   orders.init(
