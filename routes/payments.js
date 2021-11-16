@@ -2,7 +2,6 @@ const express = require("express");
 const router = express.Router();
 const snap = require("../Midtrans");
 const model = require("../models/index");
-const { Op } = require("sequelize");
 
 async function HandlePaymentChangeStatus(PaymentData, status = 2) {
   const arrOrderId = PaymentData.order_id.split("-");
