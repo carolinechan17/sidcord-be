@@ -60,7 +60,6 @@ router.get("/", async (req, res) => {
 //check ongkir
 router.post("/ongkir", async (req, res) => {
   const { kurir, asal, tujuan } = req.body;
-
   return CalculateShippingCost(asal, tujuan, kurir)
     .then((result) => {
       return res.json(result.rajaongkir.results[0].costs[0].cost);
